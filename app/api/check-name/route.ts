@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
+function toSlug(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
+
 export async function POST(req: NextRequest) {
   const { name } = await req.json();
 
@@ -7,28 +14,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Name is required." }, { status: 400 });
   }
 
-  try {
-    const response = await fetch(
-      `https://api.opencorporates.com/v0.4/companies/search?q=${encodeURIComponent(name)}&format=json`,
-      { headers: { Accept: "application/json" }, next: { revalidate: 0 } }
-    );
+  const slug = toSlug(name);
+  if (!slug) {
+    return NextResponse.json({ error: "Invalid name." }, { status: 400 });
+  }
 
-    if (!response.ok) {
-      return NextResponse.json({ error: "Registry unavailable." }, { status: 502 });
+  try {
+    // RDAP lookup: 200 = domain registered (taken), 404 = available
+    const response = await fetch(`https://rdap.org/domain/${slug}.com`, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 0 },
+    });
+
+    if (response.status === 404) {
+      return NextResponse.json({ available: true, domain: `${slug}.com` });
     }
 
-    const data = await response.json();
-    const companies: { company: { name: string } }[] =
-      data.results?.companies ?? [];
+    if (response.ok) {
+      return NextResponse.json({ available: false, domain: `${slug}.com` });
+    }
 
-    const exactMatches = companies.filter(
-      (c) => c.company.name.toLowerCase() === name.toLowerCase()
-    );
-
-    return NextResponse.json({
-      available: exactMatches.length === 0,
-      matchCount: exactMatches.length,
-    });
+    return NextResponse.json({ error: "Registry unavailable." }, { status: 502 });
   } catch {
     return NextResponse.json(
       { error: "Could not check name availability." },

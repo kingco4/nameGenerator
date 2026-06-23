@@ -101,12 +101,6 @@ export default function Home() {
             ✦ NAMEIT
           </span>
         </div>
-        <span
-          className="text-sm font-bold uppercase tracking-widest"
-          style={{ color: "var(--sand)" }}
-        >
-          Business Name Generator
-        </span>
       </header>
 
       {/* Hero */}
@@ -369,8 +363,8 @@ export default function Home() {
             className="text-center text-xs font-semibold mt-8"
             style={{ color: "var(--sand)" }}
           >
-            Availability checked against global company registries via OpenCorporates.
-            Always verify trademarks and local registrations before use.
+            .com domain availability checked via RDAP. Always verify trademarks
+            and local business registrations before use.
           </p>
 
           <div className="text-center mt-6">
