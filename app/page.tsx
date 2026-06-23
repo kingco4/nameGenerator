@@ -6,6 +6,7 @@ interface NameIdea {
   name: string;
   tagline: string;
   why: string;
+  availability?: "checking" | "available" | "taken" | "error";
 }
 
 const EXAMPLES = [
@@ -38,8 +39,39 @@ export default function Home() {
       if (data.error) {
         setError(data.error);
       } else {
-        setNames(data.names);
+        const namesWithChecking: NameIdea[] = data.names.map(
+          (n: NameIdea) => ({ ...n, availability: "checking" as const })
+        );
+        setNames(namesWithChecking);
         setHasGenerated(true);
+
+        // Check availability for all names in parallel
+        namesWithChecking.forEach(async (item, i) => {
+          try {
+            const checkRes = await fetch("/api/check-name", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: item.name }),
+            });
+            const checkData = await checkRes.json();
+            const status: NameIdea["availability"] = checkData.error
+              ? "error"
+              : checkData.available
+              ? "available"
+              : "taken";
+            setNames((prev) =>
+              prev.map((n, idx) =>
+                idx === i ? { ...n, availability: status } : n
+              )
+            );
+          } catch {
+            setNames((prev) =>
+              prev.map((n, idx) =>
+                idx === i ? { ...n, availability: "error" } : n
+              )
+            );
+          }
+        });
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -264,6 +296,55 @@ export default function Home() {
                     0{i + 1}
                   </span>
                 </div>
+
+                {/* Availability badge */}
+                {item.availability === "checking" && (
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full"
+                    style={{
+                      backgroundColor: i % 3 === 0 ? "rgba(255,255,255,0.15)" : "var(--cream)",
+                      color: i % 3 === 0 ? "rgba(255,255,255,0.7)" : "var(--sand)",
+                    }}
+                  >
+                    <svg className="spin-slow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                    </svg>
+                    Checking…
+                  </span>
+                )}
+                {item.availability === "available" && (
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full"
+                    style={{
+                      backgroundColor: i % 3 === 0 ? "rgba(255,255,255,0.2)" : "#d1fae5",
+                      color: i % 3 === 0 ? "white" : "#065f46",
+                    }}
+                  >
+                    ✓ Name Available
+                  </span>
+                )}
+                {item.availability === "taken" && (
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full"
+                    style={{
+                      backgroundColor: i % 3 === 0 ? "rgba(0,0,0,0.2)" : "#fee2e2",
+                      color: i % 3 === 0 ? "rgba(255,255,255,0.9)" : "#991b1b",
+                    }}
+                  >
+                    ✕ Already Registered
+                  </span>
+                )}
+                {item.availability === "error" && (
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full"
+                    style={{
+                      backgroundColor: i % 3 === 0 ? "rgba(255,255,255,0.15)" : "var(--cream)",
+                      color: i % 3 === 0 ? "rgba(255,255,255,0.6)" : "var(--sand)",
+                    }}
+                  >
+                    — Check Unavailable
+                  </span>
+                )}
                 <p
                   className="text-sm font-black uppercase tracking-widest"
                   style={{
@@ -284,7 +365,15 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="text-center mt-10">
+          <p
+            className="text-center text-xs font-semibold mt-8"
+            style={{ color: "var(--sand)" }}
+          >
+            Availability checked against global company registries via OpenCorporates.
+            Always verify trademarks and local registrations before use.
+          </p>
+
+          <div className="text-center mt-6">
             <button
               onClick={handleGenerate}
               className="px-10 py-4 rounded-2xl text-base font-black uppercase tracking-widest transition-all cursor-pointer"
