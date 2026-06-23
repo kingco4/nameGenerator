@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+:root {
+  --orange: #f97316;
+  --cream: #fdf6ec;
+  --beige: #e8dcc8;
+  --sand: #c9b99a;
+  --charcoal: #1a1208;
+}
+
+body {
+  background-color: var(--cream);
+  color: var(--charcoal);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fadeUp 0.5s ease forwards;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-slow {
+  animation: spin-slow 1.2s linear infinite;
+}
