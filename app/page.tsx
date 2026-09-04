@@ -33,7 +33,10 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description }),
+        body: JSON.stringify({
+          description,
+          excludeNames: names.map((n) => n.name),
+        }),
       });
       const data = await res.json();
       if (data.error) {
@@ -91,7 +94,6 @@ export default function Home() {
       {/* Hero Header */}
       <header
         className="w-full py-6 px-6 flex items-center justify-between"
-        style={{ borderBottom: "3px solid var(--beige)" }}
       >
         <div className="flex items-center gap-2">
           <span
@@ -104,7 +106,7 @@ export default function Home() {
       </header>
 
       {/* Hero */}
-      <section className="max-w-4xl mx-auto px-6 pt-16 pb-10 text-center">
+      <section className="max-w-4xl mx-auto px-6 pt-4 pb-10 text-center">
         <p
           className="text-sm font-black uppercase tracking-[0.3em] mb-4"
           style={{ color: "var(--orange)" }}

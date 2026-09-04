@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 const client = new Anthropic();
 
 export async function POST(req: NextRequest) {
-  const { description } = await req.json();
+  const { description, excludeNames } = await req.json();
 
   if (!description?.trim()) {
     return NextResponse.json(
@@ -13,15 +13,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const exclusionClause =
+    excludeNames?.length > 0
+      ? `\n\nDo NOT use any of these previously generated names — every name must be completely new and different:\n${excludeNames.map((n: string) => `- ${n}`).join("\n")}`
+      : "";
+
   const message = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 1024,
+    temperature: 1,
     messages: [
       {
         role: "user",
         content: `You are a creative branding expert. Generate 8 unique, catchy business name ideas based on the following description or ideas:
 
-"${description}"
+"${description}"${exclusionClause}
 
 Return ONLY a JSON array of objects with this exact structure (no markdown, no extra text):
 [
