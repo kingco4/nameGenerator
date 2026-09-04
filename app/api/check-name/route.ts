@@ -20,18 +20,23 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // RDAP lookup: 200 = domain registered (taken), 404 = available
-    const response = await fetch(`https://rdap.org/domain/${slug}.com`, {
-      headers: { Accept: "application/json" },
-      next: { revalidate: 0 },
+    const domain = `${slug}.com`;
+    // Direct .com RDAP lookup. rdap.org's redirector returns 403 to Node fetch.
+    // Verisign returns 200 for registered domains and 404 for available names.
+    const response = await fetch(`https://rdap.verisign.com/com/v1/domain/${domain}`, {
+      headers: {
+        Accept: "application/rdap+json, application/json",
+        "User-Agent": "name-generator/0.1",
+      },
+      cache: "no-store",
     });
 
     if (response.status === 404) {
-      return NextResponse.json({ available: true, domain: `${slug}.com` });
+      return NextResponse.json({ available: true, domain });
     }
 
     if (response.ok) {
-      return NextResponse.json({ available: false, domain: `${slug}.com` });
+      return NextResponse.json({ available: false, domain });
     }
 
     return NextResponse.json({ error: "Registry unavailable." }, { status: 502 });
